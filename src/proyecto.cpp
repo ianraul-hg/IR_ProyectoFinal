@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <std_msgs/Float64.h>
+#include <std_srvs/Empty.h>
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
@@ -15,6 +16,8 @@ void imgCallback(const sensor_msgs::ImageConstPtr& msg);
 
 void controlador_X(int cx, int columnas, ros::NodeHandle node_handle);
 void controlador_Y(int cy, int filas, ros::NodeHandle node_handle);
+
+bool init_gazebo_engine(void);
 
 float T_muestra=0.02;
 
@@ -41,12 +44,16 @@ int main(int argc, char** argv)
 
     ros::init(argc,argv, "proyecto");
     ros::NodeHandle node_handle;
-    
+
 
     image_transport::ImageTransport imt(node_handle);
 
     image_transport::Subscriber img_sub = imt.subscribe("/robotis_op3/camera/image_raw", 1, imgCallback);
 
+    init_gazebo_engine();
+
+    while(ros::ok())
+    {
     ros::spin();
 
     //Segmentacion
@@ -73,6 +80,8 @@ int main(int argc, char** argv)
     controlador_X(cx, columnas, node_handle);
     controlador_Y(cy, filas, node_handle);
 
+    }
+
     return 0;
 }
 
@@ -86,7 +95,7 @@ void imgCallback(const sensor_msgs::ImageConstPtr& msg)
     {
         ROS_ERROR("image wrong");
     }
-    
+
 
 }
 
@@ -115,14 +124,14 @@ void controlador_X(int cx, int columnas, ros::NodeHandle node_handle)
     control_X1 = control_X;
     error_X2 = error_X1;
     error_X1 = error_X;
-    
+
 
 }
 
 void controlador_Y(int cy, int filas, ros::NodeHandle node_handle)
 {   
     ros::Publisher signal_motorY  = node_handle.advertise<std_msgs::Float64>("/robotis_op3/head_tilt_position/command", 1);
-    
+
     std_msgs::Float64 signal_Y;
 
     float K_pro = 0.0035;
@@ -145,4 +154,28 @@ void controlador_Y(int cy, int filas, ros::NodeHandle node_handle)
     error_Y2 = error_Y1;
     error_Y1 = error_Y;
 
+}
+
+bool init_gazebo_engine(void)
+{
+  std_srvs::Empty srv;
+  bool unpaused = ros::service::call("/gazebo/unpause_physics", srv);
+  unsigned int i = 0;
+  // Trying to unpause Gazebo for 10 seconds.
+  while (i <= 10 && !unpaused)
+  {
+    ROS_INFO("Wait for 1 second before trying to unpause Gazebo again.");
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    unpaused = ros::service::call("/gazebo/unpause_physics", srv);
+    ++i;
+  }
+  if (!unpaused)
+  {
+    ROS_FATAL("Could not wake up Gazebo.");
+    return false;
+  }
+  ROS_INFO("Unpaused the Gazebo simulation.");
+  // Wait for Gazebo GUI show up.
+  ros::Duration(10).sleep();
+  return true;
 }
