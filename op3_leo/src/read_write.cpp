@@ -26,15 +26,12 @@ void torqueOnAll();
 
 //void callback_sig(const geometry_msgs::Point& msg_sig);
 
-float dato_Y=0;
-float dato_X=0;
 
-void callback_sig(const geometry_msgs::Point& msg_sig)
-{
-    dato_X  =   msg_sig.x; 
-    dato_Y  =   msg_sig.y;
-  
-}
+float dato_X;
+float dato_Y;
+
+void callback_x(const std_msgs::Float64 msg_x);
+void callback_y(const std_msgs::Float64 msg_y);
 
 enum ControlModule
 {
@@ -56,58 +53,56 @@ ros::ServiceClient set_joint_module_client;
 int control_module = None;
 bool demo_ready = false;
 
-
-
-
 //node main
 int main(int argc, char **argv)
 {
   //init ros
   ros::init(argc, argv, "read_write");
   ros::NodeHandle nh(ros::this_node::getName());
-  //ros::NodeHandle node_handle;
-  ros::Subscriber datos_sub = nh.subscribe("/signal", 1, callback_sig);
+  ros::NodeHandle node_handle;
 
-  bool is_sim = false;
+  //ros::NodeHandle node_handle;
+  ros::Subscriber datosx_sub = node_handle.subscribe("x", 1, callback_x);
+  ros::Subscriber datosy_sub = node_handle.subscribe("y", 1, callback_y);
+
+//SIMULACION
+    ros::Publisher signal_motorX = node_handle.advertise<std_msgs::Float64>("/robotis_op3/head_pan_position/command", 1);
+    ros::Publisher signal_motorY = node_handle.advertise<std_msgs::Float64>("/robotis_op3/head_tilt_position/command", 1);
+
+    std_msgs::Float64 signal_Y;
+    std_msgs::Float64 signal_X;
+
+  bool is_sim = true; // no es simulacion
   nh.getParam("gazebo_sim", is_sim);
   if(is_sim)
   {
-    /*
+    
     init_gazebo_engine();
     // we have to create publishers for each one of the joints, here we only show for l_el joint, 
     // complete for others...
-    ros::Publisher l_el_pub = nh.advertise<std_msgs::Float64>("/robotis_op3/l_el_position/command", 1);
 
-    //SIMULACION
-    ros::Publisher signal_motorX = node_handle.advertise<std_msgs::Float64>("/robotis_op3/head_pan_position/command", 1);
-    ros::Publisher signal_motorY  = node_handle.advertise<std_msgs::Float64>("/robotis_op3/head_tilt_position/command", 1);
+    
+
     
     // .....
     // now we can send value, firs we create message data and then we publish
     while (ros::ok())
     {
-      std_msgs::Float64 l_el_msg;
-      std_msgs::Float64 signal_Y;
-      std_msgs::Float64 signal_X;
+     
+      signal_Y.data = dato_Y;
+      signal_X.data = dato_X;
 
-      l_el_msg.data = 1.7; // we send constant value of pi/2
-      //signal_Y.data = dato_Y;
-      //signal_X.data = dato_X;
-
-      l_el_pub.publish(l_el_msg);
-      //signal_motorX.publish(signal_X);
-      //signal_motorY.publish(signal_Y);
+      signal_motorX.publish(signal_X);
+      signal_motorY.publish(signal_Y);
 
     }
-*/
-
+  // For robot
   }else
   {
-
+    
     init_pose_pub = nh.advertise<std_msgs::String>("/robotis/base/ini_pose", 0);
     dxl_torque_pub = nh.advertise<std_msgs::String>("/robotis/dxl_torque", 0);
     write_joint_pub = nh.advertise<sensor_msgs::JointState>("/robotis/set_joint_states", 0);
-
 
     //ROBOT
     //ros::Publisher signal_motorX = node_handle.advertise<std_msgs::Float64>("head_pan", 1);
@@ -148,10 +143,10 @@ int main(int argc, char **argv)
     write_msg.name.push_back("r_el");
     write_msg.position.push_back(0.0);
     */
-     write_msg.name.push_back("head_pan");
-    write_msg.position.push_back(0.0);
+    write_msg.name.push_back("head_pan");
+    write_msg.position.push_back(dato_X);
     write_msg.name.push_back("head_tilt");
-    write_msg.position.push_back(0.0);
+    write_msg.position.push_back(dato_Y);
     write_joint_pub.publish(write_msg);
 
 
@@ -162,6 +157,8 @@ int main(int argc, char **argv)
 
 
       // process
+      ros::spinOnce();
+      
       // write_msg.name.push_back("r_sho_pitch"); // this is -Y respect solid
       // write_msg.position.push_back(0.0);
       // write_msg.name.push_back("r_sho_roll"); // this is -X respect solid
@@ -175,6 +172,8 @@ int main(int argc, char **argv)
       write_msg.position.push_back(dato_Y);
 
       write_joint_pub.publish(write_msg);
+
+      std::cout << dato_X << "\n";
       
       //std_msgs::Float64 signal_Y;
       //std_msgs::Float64 signal_X;
@@ -251,7 +250,7 @@ void torqueOnAll()
   check_msg.data = "check";
   dxl_torque_pub.publish(check_msg);
 }
-/*
+
 bool init_gazebo_engine(void)
 {
   std_srvs::Empty srv;
@@ -274,6 +273,15 @@ bool init_gazebo_engine(void)
   // Wait for Gazebo GUI show up.
   ros::Duration(10).sleep();
   return true;
-}*/
+}
 
 
+void callback_x(const std_msgs::Float64 msg_x)
+{
+  dato_X  =   msg_x.data; 
+}
+
+void callback_y(const std_msgs::Float64 msg_y)
+{
+  dato_Y  =   msg_y.data; 
+}

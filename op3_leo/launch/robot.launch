@@ -24,8 +24,8 @@
     <param name="gazebo_sim" value="false"    type="bool" />
   </node>
 
-  <!-- proyecto node -->>
-   <node pkg="proyecto" type="proyecto_node" name="proyecto" output="screen">
+  <!-- proyecto node -->
+  <node pkg="proyecto" type="proyecto_node" name="proyecto" output="screen">
   </node>
 
 </launch>
