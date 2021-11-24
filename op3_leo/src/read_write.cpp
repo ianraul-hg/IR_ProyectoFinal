@@ -24,9 +24,6 @@ void goInitPose();
 bool checkManagerRunning(std::string& manager_name);
 void torqueOnAll();
 
-//void callback_sig(const geometry_msgs::Point& msg_sig);
-
-
 float dato_X;
 float dato_Y;
 
@@ -72,20 +69,13 @@ int main(int argc, char **argv)
     std_msgs::Float64 signal_Y;
     std_msgs::Float64 signal_X;
 
-  bool is_sim = true; // no es simulacion
+  bool is_sim = false; // no es simulacion
   nh.getParam("gazebo_sim", is_sim);
   if(is_sim)
   {
     
     init_gazebo_engine();
-    // we have to create publishers for each one of the joints, here we only show for l_el joint, 
-    // complete for others...
 
-    
-
-    
-    // .....
-    // now we can send value, firs we create message data and then we publish
     while (ros::ok())
     {
      
@@ -103,10 +93,6 @@ int main(int argc, char **argv)
     init_pose_pub = nh.advertise<std_msgs::String>("/robotis/base/ini_pose", 0);
     dxl_torque_pub = nh.advertise<std_msgs::String>("/robotis/dxl_torque", 0);
     write_joint_pub = nh.advertise<sensor_msgs::JointState>("/robotis/set_joint_states", 0);
-
-    //ROBOT
-    //ros::Publisher signal_motorX = node_handle.advertise<std_msgs::Float64>("head_pan", 1);
-   // ros::Publisher signal_motorY  = node_handle.advertise<std_msgs::Float64>("head_tilt", 1);
 
 
     // service
@@ -144,9 +130,9 @@ int main(int argc, char **argv)
     write_msg.position.push_back(0.0);
     */
     write_msg.name.push_back("head_pan");
-    write_msg.position.push_back(dato_X);
+    write_msg.position.push_back(0.0);
     write_msg.name.push_back("head_tilt");
-    write_msg.position.push_back(dato_Y);
+    write_msg.position.push_back(0.0);
     write_joint_pub.publish(write_msg);
 
 
@@ -163,8 +149,8 @@ int main(int argc, char **argv)
       // write_msg.position.push_back(0.0);
       // write_msg.name.push_back("r_sho_roll"); // this is -X respect solid
       // write_msg.position.push_back(0.0);
-    //   write_msg.name.push_back("r_el");
-     //  write_msg.position.push_back(counter);// this is +X respect solid
+      //   write_msg.name.push_back("r_el");
+      //  write_msg.position.push_back(counter);// this is +X respect solid
 
       write_msg.name.push_back("head_pan");
       write_msg.position.push_back(dato_X);
@@ -173,17 +159,6 @@ int main(int argc, char **argv)
 
       write_joint_pub.publish(write_msg);
 
-      std::cout << dato_X << "\n";
-      
-      //std_msgs::Float64 signal_Y;
-      //std_msgs::Float64 signal_X;
-
-      
-      //signal_Y.data = dato_Y;
-      //signal_X.data = dato_X;
-      
-      //signal_motorX.publish(signal_X);
-      //signal_motorY.publish(signal_Y);
 
       counter += 0.01;
 
